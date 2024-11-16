@@ -87,7 +87,7 @@ function DemoPageContent() {
         <Route path="/matakuliah" element={<MataKuliahList />} />
         <Route path="/krs" element={<KrsListTable />} />
         <Route path="/ipk" element={<IpkListTable />} />
-				<Route path="/mahasiswa/:nim" element={<MahasiswaDetail />} />
+				<Route path="/mhsc/:nim" element={<MahasiswaDetail />} />
       </Routes>
     </Box>
   );

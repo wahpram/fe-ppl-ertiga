@@ -11,76 +11,75 @@ import FormControl from '@mui/material/FormControl';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import axios from 'axios';
 
-// Kolom untuk Data KRS
 const krsColumns = [
-  { field: 'nama_mk', headerName: 'Mata Kuliah', width: 200 },
-  { field: 'sks', headerName: 'SKS', width: 100 },
-  { field: 'nilai', headerName: 'Nilai', width: 100 },
-  { field: 'tahun', headerName: 'Tahun', width: 100 },
-  { field: 'semester', headerName: 'Semester', width: 100 },
+  { field: 'nama_mk', headerName: 'Mata Kuliah', width: 300 , flex: 2},
+  { field: 'sks', headerName: 'SKS', width: 100, flex: 1},
+  { field: 'nilai', headerName: 'Nilai', width: 100, flex: 1 },
+  { field: 'tahun', headerName: 'Tahun', width: 100, flex: 1 },
+  { field: 'semester', headerName: 'Semester', width: 100, flex: 1 },
 ];
 
-// Kolom untuk Data IPK
 const ipkColumns = [
-  { field: 'semester', headerName: 'Semester', width: 100 },
-  { field: 'tahun', headerName: 'Tahun', width: 100 },
-  { field: 'ips', headerName: 'IPS', width: 100 },
-  { field: 'ipk', headerName: 'IPK', width: 100 },
+  { field: 'semester', headerName: 'Semester', width: 100, flex: 1 },
+  { field: 'tahun', headerName: 'Tahun', width: 100, flex: 1 },
+  { field: 'ips', headerName: 'IPS', width: 100, flex: 1 },
+  { field: 'ipk', headerName: 'IPK', width: 100, flex: 1 },
 ];
 
 function MahasiswaDetail() {
   const { nim } = useParams();
-  const [view, setView] = useState('krs'); // Toggle untuk KRS atau IPK
+  const [view, setView] = useState('krs');
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mahasiswa, setMahasiswa] = useState(null);
-  const [semester, setSemester] = useState(''); // State untuk semester (untuk KRS)
-  const [displayType, setDisplayType] = useState('table'); // Tabel atau Grafik (untuk IPK)
+  const [semester, setSemester] = useState('');
+  const [displayType, setDisplayType] = useState('table');
 
   useEffect(() => {
-    // Ambil data detail mahasiswa
-    axios.get(`https://be.bitloka.top/mhs/${nim}`)
-      .then((response) => setMahasiswa(response.data))
-      .catch((error) => console.error("Error fetching mahasiswa:", error));
-  }, [nim]);
+    axios.get(`https://be.bitloka.top/mhsc/${nim}`)
+    .then((response) => {
+      setMahasiswa(response.data);
+    })
+    .catch((error) => console.error("Error fetching mahasiswa:", error));
+}, [nim]);
 
-  useEffect(() => {
-    setLoading(true);
-    const endpoint = view === 'krs' 
-      ? `https://be.bitloka.top/krs?nim=${nim}` 
-      : `https://be.bitloka.top/ipk?nim=${nim}`;
-    
-    // Jika melihat KRS, filter berdasarkan semester
-    axios.get(endpoint)
-      .then((response) => {
-        let fetchedData = response.data;
+useEffect(() => {
+  setLoading(true);
+  const endpoint =
+    view === 'krs'
+      ? `https://be.bitloka.top/krs?nim=${nim}`
+      : `https://be.bitloka.top/ipkc/${nim}`;
+  
+  axios.get(endpoint)
+    .then((response) => {
+      let fetchedData;
+      if (view === 'krs') {
+        fetchedData = response.data.filter(item => item.nim === nim && (!semester || item.semester === parseInt(semester)));
+        fetchedData = fetchedData.map((item, index) => ({
+          id: index + 1,
+          ...item,
+          nama_mk: item.MK?.nama_mk,
+          sks: item.MK?.sks,
+        }));
+      } else {
+        fetchedData = response.data.ipList.map((item, index) => ({
+          id: index + 1,
+          semester: item.semester,
+          tahun: item.tahun,
+          ips: parseFloat(item.ips).toFixed(2),
+          ipk: parseFloat(item.ipk).toFixed(2),
+        }));
+      }
 
-        if (view === 'krs') {
-          // Filter KRS berdasarkan semester
-          fetchedData = fetchedData.filter(item => item.nim === nim && (!semester || item.semester === parseInt(semester)));
-          fetchedData = fetchedData.map((item, index) => ({
-            id: index + 1,
-            ...item,
-            nama_mk: item.MK?.nama_mk,
-            sks: item.MK?.sks,
-          }));
-        } else {
-          // Untuk IPK, data tidak difilter berdasarkan semester
-          fetchedData = fetchedData.filter(item => item.nim === nim);
-          fetchedData = fetchedData.map((item, index) => ({
-            id: index + 1,
-            ...item,
-          }));
-        }
-
-        setData(fetchedData);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error("Error fetching data:", error);
-        setLoading(false);
-      });
-  }, [nim, view, semester]);
+      setData(fetchedData);
+    })
+    .catch((error) => {
+      console.error("Error fetching data:", error);
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+}, [nim, view, semester]);
 
   const handleSemesterChange = (event) => {
     setSemester(event.target.value);
@@ -96,6 +95,7 @@ function MahasiswaDetail() {
         <Box sx={{ mb: 2 }}>
           <Typography variant="h5">{mahasiswa.nim} - {mahasiswa.nama_mhs}</Typography>
           <Typography variant="body1">IPK: {mahasiswa.ipk}</Typography>
+          <Typography variant="body1">IPS: {mahasiswa.ips}</Typography>
         </Box>
       )}
       
@@ -167,6 +167,7 @@ function MahasiswaDetail() {
             loading={loading}
             disableColumnSelector
             disableDensitySelector
+            paginationMode="client"
           />
         ) : (
           displayType === 'table' ? (
