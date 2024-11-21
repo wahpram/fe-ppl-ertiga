@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import { DataGrid, GridToolbar } from '@mui/x-data-grid';
+import { useSearchParams } from 'react-router-dom';
 import { getData } from '../services/apiServices';
 
 const columns = [
@@ -15,9 +16,14 @@ const columns = [
 export default function IpkListTable() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  const pageSizeFromUrl = parseInt(searchParams.get('pageSize'), 10) || 25;
+  const pageFromUrl = parseInt(searchParams.get('page'), 10) || 0;
+
   const [paginationModel, setPaginationModel] = useState({
-    pageSize: 25,
-    page: 0,
+    pageSize: pageSizeFromUrl,
+    page: pageFromUrl,
   });
 
   const fetchData = async (limit) => {
@@ -51,6 +57,10 @@ export default function IpkListTable() {
 
   useEffect(() => {
     fetchData(paginationModel.pageSize);
+    setSearchParams({
+      pageSize: paginationModel.pageSize,
+      page: paginationModel.page,
+    });
   }, [paginationModel.page, paginationModel.pageSize]);
 
   const handlePaginationModelChange = (newModel) => {

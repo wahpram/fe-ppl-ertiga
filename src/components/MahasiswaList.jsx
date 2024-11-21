@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import { DataGrid, GridToolbar } from '@mui/x-data-grid';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getData } from '../services/apiServices';
 
 const columns = (handleDetailClick) => [
@@ -32,10 +32,16 @@ const columns = (handleDetailClick) => [
 export default function MahasiswaListTable() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  const pageSizeFromUrl = parseInt(searchParams.get('pageSize'), 10) || 25;
+  const pageFromUrl = parseInt(searchParams.get('page'), 10) || 0;
+
   const [paginationModel, setPaginationModel] = useState({
-    pageSize: 25,
-    page: 0,
+    pageSize: pageSizeFromUrl,
+    page: pageFromUrl,
   });
+  
   const [totalRows, setTotalRows] = useState(0);
   const navigate = useNavigate();
 
@@ -67,12 +73,14 @@ export default function MahasiswaListTable() {
 
   useEffect(() => {
     fetchData(paginationModel.pageSize);
-  }, []);
+    setSearchParams({
+      pageSize: paginationModel.pageSize,
+      page: paginationModel.page,
+    });
+  }, [paginationModel.page, paginationModel.pageSize]);
 
   const handlePaginationModelChange = (newModel) => {
     setPaginationModel(newModel);
-    const limit = newModel.pageSize === -1 ? undefined : newModel.pageSize;
-    fetchData(limit);
   };
 
   const handleDetailClick = (nim) => {
