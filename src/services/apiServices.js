@@ -1,12 +1,18 @@
-// services/apiService.js
 import axios from 'axios';
 
 const BASE_URL = 'https://be.bitloka.top';
 
-export const getData = async (endpoint) => {
+export const getData = async (endpoint, { limit } = {}) => {
   try {
-    const response = await axios.get(`${BASE_URL}/${endpoint}`);
-    return response.data;
+    const url = limit 
+      ? `${BASE_URL}/${endpoint}?limit=${limit}` 
+      : `${BASE_URL}/${endpoint}`;
+    
+    const response = await axios.get(url);
+    return {
+      data: response.data,
+      total: response.data.length
+    };
   } catch (error) {
     console.error(`Error fetching data from ${endpoint}:`, error);
     throw error;
